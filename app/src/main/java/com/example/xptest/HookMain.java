@@ -18,6 +18,7 @@ import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XC_MethodReplacement;
+import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_InitPackageResources;
@@ -39,7 +40,64 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
         // 主进程xx
         if (lpparam.processName.equals(lpparam.packageName)){
             showToast(lpparam.packageName + " coming");
-            Class<?> People = XposedHelpers.findClassIfExists("com.hexl.lessontest.logic.People", lpparam.classLoader);
+
+//            test(lpparam.classLoader);
+
+//            testPre();
+            
+
+
+
+        }
+
+
+
+    }
+
+    private static void showToast(String msg){
+        new Handler(Looper.getMainLooper()).postDelayed(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        Context context = AndroidAppHelper.currentApplication().getApplicationContext();
+                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+                    }
+                }, 3000);
+    }
+
+    @Override
+    public void handleInitPackageResources(XC_InitPackageResources.InitPackageResourcesParam resparam) throws Throwable {
+        String packageName1 = resparam.res.getPackageName();
+        String packageName2 = resparam.packageName;
+        Log.i(TAG, "handleInitPackageResources: " + packageName1 + "  ,  "  +  packageName2);
+    }
+
+    @Override
+    public void initZygote(StartupParam startupParam) throws Throwable {
+        String modulePath = startupParam.modulePath;
+        boolean startsSystemServer = startupParam.startsSystemServer;
+        Log.i(TAG, "initZygote: " + modulePath + "  ,  " + startsSystemServer);
+    }
+
+    private static XSharedPreferences getPref(String path) {
+        XSharedPreferences pref = new XSharedPreferences(BuildConfig.APPLICATION_ID, path);
+        return pref.getFile().canRead() ? pref : null;
+    }
+
+    private void testPre(){
+        XSharedPreferences sharedPreferences = getPref("TestSetting");
+        if (sharedPreferences == null){
+            Log.i(TAG, "handleLoadPackage: sharedPreferences = null");
+        }else {
+            sharedPreferences.reload();
+            String web = sharedPreferences.getString("web", "");
+            Log.i(TAG, "handleLoadPackage: web = " + web);
+        }
+    }
+
+    private void test(ClassLoader classLoader){
+        Class<?> People = XposedHelpers.findClassIfExists("com.hexl.lessontest.logic.People", classLoader);
+            /*
             Field hello = XposedHelpers.findField(People, "hello");
             hello.setAccessible(true);
             String world = (String) hello.get(null);
@@ -131,36 +189,36 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
             String gpt = (String) XposedHelpers.getAdditionalStaticField(People, "chat");
             Log.i(TAG, "handleLoadPackage: chatgpt = " + chatgpt);
             Log.i(TAG, "handleLoadPackage: gpt = " + gpt);
+            */
+
+        XposedHelpers.findAndHookConstructor("com.hexl.lessontest.logic.People", classLoader, new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                super.beforeHookedMethod(param);
+                Log.i(TAG, "beforeHookedMethod: findAndHookConstructor before");
+            }
+
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
+                Object obj = param.thisObject;
+                Log.i(TAG, "afterHookedMethod: findAndHookConstructor after: " + obj);
+                Store.PeopleConstructorInstance = obj;
+            }
+        });
 
 
-        }
-
-
-
-    }
-
-    private static void showToast(String msg){
-        new Handler(Looper.getMainLooper()).postDelayed(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        Context context = AndroidAppHelper.currentApplication().getApplicationContext();
-                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
-                    }
-                }, 3000);
-    }
-
-    @Override
-    public void handleInitPackageResources(XC_InitPackageResources.InitPackageResourcesParam resparam) throws Throwable {
-        String packageName1 = resparam.res.getPackageName();
-        String packageName2 = resparam.packageName;
-        Log.i(TAG, "handleInitPackageResources: " + packageName1 + "  ,  "  +  packageName2);
-    }
-
-    @Override
-    public void initZygote(StartupParam startupParam) throws Throwable {
-        String modulePath = startupParam.modulePath;
-        boolean startsSystemServer = startupParam.startsSystemServer;
-        Log.i(TAG, "initZygote: " + modulePath + "  ,  " + startsSystemServer);
+        XposedHelpers.callStaticMethod(People, "speak", "20230311", 21);
+        Object PeopleInstance = XposedHelpers.newInstance(People, 10, "101010");
+//            Store.PeopleConstructorInstance;
+        XposedHelpers.callMethod(Store.PeopleConstructorInstance, "run", "111111");
+        Log.i(TAG, "handleLoadPackage: call = success");
+            /*
+            public static void speak(xxx ooo, int i) {
+                xxxxddfdaf
+                String sign = ooo.getSign();
+                map.put("sign“， sign)；
+            }
+             */
     }
 }
