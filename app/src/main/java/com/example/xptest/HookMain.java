@@ -42,7 +42,7 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
         Log.i(TAG, "handleLoadPackage: classLoader = " + classLoader);
         Log.i(TAG, "handleLoadPackage: isFirstApplication = " + isFirstApplication);
         // 主进程xx
-        if (lpparam.processName.equals(lpparam.packageName)){
+        if (lpparam.processName.equals(lpparam.packageName) && !BuildConfig.APPLICATION_ID.equals(lpparam.packageName)){
             showToast(lpparam.packageName + " coming");
 
             connectServer();
