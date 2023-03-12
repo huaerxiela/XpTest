@@ -13,6 +13,11 @@ dependencyResolutionManagement {
 
         maven { url 'https://api.xposed.info/' }
 
+        maven {
+            name "IntMaven"
+            url "https://nexus.iinti.cn/repository/maven-public/"
+        }
+
     }
 }
 rootProject.name = "XpTest"

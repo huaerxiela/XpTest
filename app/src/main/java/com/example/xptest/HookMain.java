@@ -8,11 +8,15 @@ import android.util.Log;
 import android.widget.Toast;
 
 
+import com.example.xptest.handler.TestHandler;
+import com.example.xptest.handler.TwoHandler;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
+import cn.iinti.sekiro3.business.api.SekiroClient;
 import de.robv.android.xposed.IXposedHookInitPackageResources;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
@@ -41,10 +45,22 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
         if (lpparam.processName.equals(lpparam.packageName)){
             showToast(lpparam.packageName + " coming");
 
+            connectServer();
 //            test(lpparam.classLoader);
 
 //            testPre();
-            
+
+            Class<?> PeopleClass = XposedHelpers.findClassIfExists("com.hexl.lessontest.logic.People", lpparam.classLoader);
+            if (PeopleClass != null){
+                XposedBridge.hookAllConstructors(PeopleClass, new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        super.afterHookedMethod(param);
+                        Store.PeopleMethodInstance = param.thisObject;
+                    }
+                });
+            }
+
 
 
 
@@ -84,14 +100,34 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
         return pref.getFile().canRead() ? pref : null;
     }
 
-    private void testPre(){
+    private boolean connectServer(){
+        String web = testPre();
+        assert web != null;
+        String[] ip_port = web.split(":");
+        SekiroClient sekiroClient = new SekiroClient("test", "hexl123", ip_port[0], Integer.parseInt(ip_port[1]));
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                sekiroClient.setupSekiroRequestInitializer((sekiroRequest, handlerRegistry) -> {
+                    // 注册一个接口，名为testAction
+                    handlerRegistry.registerSekiroHandler(new TestHandler());
+                    handlerRegistry.registerSekiroHandler(new TwoHandler());
+                }).start();
+            }
+        }).start();
+        return true;
+    }
+
+    private String testPre(){
         XSharedPreferences sharedPreferences = getPref("TestSetting");
         if (sharedPreferences == null){
             Log.i(TAG, "handleLoadPackage: sharedPreferences = null");
+            return null;
         }else {
             sharedPreferences.reload();
             String web = sharedPreferences.getString("web", "");
             Log.i(TAG, "handleLoadPackage: web = " + web);
+            return web;
         }
     }
 
@@ -216,7 +252,7 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
             /*
             public static void speak(xxx ooo, int i) {
                 xxxxddfdaf
-                String sign = ooo.getSign();
+                String sign = ooo.getSign("url=xxxxxx?keyword=erji");
                 map.put("sign“， sign)；
             }
              */
