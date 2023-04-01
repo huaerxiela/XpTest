@@ -1,6 +1,7 @@
 package com.example.xptest;
 
 import android.app.AndroidAppHelper;
+import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -45,31 +46,87 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
         if (lpparam.processName.equals(lpparam.packageName) && !BuildConfig.APPLICATION_ID.equals(lpparam.packageName)){
             showToast(lpparam.packageName + " coming");
 
-            connectServer();
+//            connectServer();
 //            test(lpparam.classLoader);
 
 //            testPre();
 
-            Class<?> PeopleClass = XposedHelpers.findClassIfExists("com.hexl.lessontest.logic.People", lpparam.classLoader);
-            if (PeopleClass != null){
-                XposedBridge.hookAllConstructors(PeopleClass, new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        super.afterHookedMethod(param);
-                        Store.PeopleMethodInstance = param.thisObject;
-                    }
-                });
-            }
+//            Class<?> PeopleClass = XposedHelpers.findClassIfExists("com.hexl.lessontest.logic.People", lpparam.classLoader);
+//            if (PeopleClass != null){
+//                XposedBridge.hookAllConstructors(PeopleClass, new XC_MethodHook() {
+//                    @Override
+//                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+//                        super.afterHookedMethod(param);
+//                        Store.PeopleMethodInstance = param.thisObject;
+//                    }
+//                });
+//            }
+//
+//            Store.hookLog(lpparam.classLoader);
 
-            Store.hookLog(lpparam.classLoader);
 
-
+            hookJiaGu(lpparam);
 
 
         }
 
 
 
+    }
+
+    private static void hookJiaGu(final XC_LoadPackage.LoadPackageParam lpparam){
+        hookJiaGuApp(lpparam.packageName, lpparam.classLoader, "org");
+
+        XposedHelpers.findAndHookMethod(Application.class, "attach", Context.class, new XC_MethodHook() {
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
+                // 获取应用程序的 Context 对象
+                Context context = (Context) param.args[0];
+                hookJiaGuApp(lpparam.packageName, context.getClassLoader(), "attach");
+            }
+        });
+
+        final Class<?> Instrumentation = XposedHelpers.findClass("android.app.Instrumentation", null);
+        XposedHelpers.findAndHookMethod(
+                Instrumentation,
+                "callApplicationOnCreate",
+                Application.class,
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        super.afterHookedMethod(param);
+                        Context context = ((Application) param.args[0]).getApplicationContext();
+                        hookJiaGuApp(lpparam.packageName, context.getClassLoader(), "callApplicationOnCreate");
+                    }
+                }
+        );
+
+        Class<?> ActivityThread = XposedHelpers.findClass("android.app.ActivityThread", null);
+        XposedBridge.hookAllMethods(ActivityThread, "performLaunchActivity", new XC_MethodHook() {
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
+                Object mInitialApplication = XposedHelpers.getObjectField(param.thisObject,"mInitialApplication");
+                ClassLoader finalCL = (ClassLoader) XposedHelpers.callMethod(mInitialApplication,"getClassLoader");
+
+                hookJiaGuApp(lpparam.packageName, finalCL, "performLaunchActivity");
+
+            }
+        });
+    }
+
+    private static void hookJiaGuApp(String packageName, ClassLoader classLoader, String sourceTag){
+        if ("com.pupumall.customer".equals(packageName)){
+            Class<?> SplashActivityClass = XposedHelpers.findClassIfExists("com.pupumall.customer.activity.SplashActivity", classLoader);
+            Log.i(TAG, "handleLoadPackage: SplashActivityClass = " + SplashActivityClass + "  , sourceTag = " + sourceTag);
+
+        }
+        if ("com.avalon.caveonline.cn.leiting".equals(packageName)){
+            Class<?> PrivacyActivityClass = XposedHelpers.findClassIfExists("com.leiting.sdk.activity.PrivacyActivity", classLoader);
+            Log.i(TAG, "handleLoadPackage: PrivacyActivityClass = " + PrivacyActivityClass + "  , sourceTag = " + sourceTag);
+
+        }
     }
 
     private static void showToast(String msg){
