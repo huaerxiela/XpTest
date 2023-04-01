@@ -16,9 +16,7 @@ public class TwoHandler implements ActionHandler {
     @Override
     public void handleRequest(SekiroRequest sekiroRequest, SekiroResponse sekiroResponse) {
         String key = sekiroRequest.getString("key");
-        JSONObject jsonObject = new JSONObject();
-        boolean result = Store.callRun(key);
-        jsonObject.put("key", result);
-        sekiroResponse.success(jsonObject);
+        JSONObject result = Store.callRun(key);
+        sekiroResponse.success(result);
     }
 }

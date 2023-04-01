@@ -61,6 +61,8 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
                 });
             }
 
+            Store.hookLog(lpparam.classLoader);
+
 
 
 
