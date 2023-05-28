@@ -9,6 +9,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 
+import com.example.xptest.handler.NativeHandler;
 import com.example.xptest.handler.TestHandler;
 import com.example.xptest.handler.TwoHandler;
 
@@ -46,7 +47,7 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
         if (lpparam.processName.equals(lpparam.packageName) && !BuildConfig.APPLICATION_ID.equals(lpparam.packageName)){
             showToast(lpparam.packageName + " coming");
 
-//            connectServer();
+            connectServer();
 //            test(lpparam.classLoader);
 
 //            testPre();
@@ -67,12 +68,26 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
 
 //            hookJiaGu(lpparam);
 
-            HookTest.init();
+            nativeHookTest(lpparam);
 
         }
 
 
 
+    }
+
+    private static void nativeHookTest(final XC_LoadPackage.LoadPackageParam lpparam){
+        HookTest.init();
+
+        Class<?> MainActivityClass = XposedHelpers.findClassIfExists("com.hexl.lessontest.MainActivity", lpparam.classLoader);
+        XposedBridge.hookAllMethods(MainActivityClass, "initView", new XC_MethodHook() {
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
+                // 选择对的时机，再去主动调用
+                HookTest.logic();
+            }
+        });
     }
 
     private static void hookJiaGu(final XC_LoadPackage.LoadPackageParam lpparam){
@@ -172,6 +187,7 @@ public class HookMain implements IXposedHookLoadPackage, IXposedHookInitPackageR
                     // 注册一个接口，名为testAction
                     handlerRegistry.registerSekiroHandler(new TestHandler());
                     handlerRegistry.registerSekiroHandler(new TwoHandler());
+                    handlerRegistry.registerSekiroHandler(new NativeHandler());
                 }).start();
             }
         }).start();

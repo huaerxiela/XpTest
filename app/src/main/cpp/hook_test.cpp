@@ -5,6 +5,7 @@
 #include <string>
 #include "lsp.h"
 #include "log.h"
+#include "elf.h"
 
 
 static HookFunType hook_func = nullptr;
@@ -22,7 +23,8 @@ HOOK_DEF(int, target_fun){
 
 HOOK_DEF(FILE *, myfopen, const char *filename, const char *mode){
     if (strstr(filename, "file.txt")){
-        return nullptr;
+        const char *fake_filename = "/data/data/com.hexl.lessontest/fake_file.txt";
+        return orig_myfopen(fake_filename, mode);
     }
     return orig_myfopen(filename, mode);
 }
@@ -32,11 +34,19 @@ HOOK_DEF(jclass, FindClass, JNIEnv *env, const char *name){
     return orig_FindClass(env, name);
 }
 
+HOOK_DEF(int, add, int x, int y){
+    LOGI("add(x,y)=add(%d,%d)", x, y);
+    return orig_add(x, y);
+}
+
 void on_library_loaded(const char *name, void *handle) {
     // hooks on `.so`
     if (strstr(name, "lessontest.so")) {
         void *target_fun = dlsym(handle, "target_fun");
         HOOK_SYMBOL(target_fun);
+
+        void* add = ElfUtils::GetModuleOffset("lessontest.so", 0xFFBC);
+        HOOK_SYMBOL(add);
     }
 }
 
