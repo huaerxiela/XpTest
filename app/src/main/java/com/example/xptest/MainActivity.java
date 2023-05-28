@@ -20,16 +20,10 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private TextView getPhone, getWeb, getProxy, getIp;
 
-    static {
-        System.loadLibrary("hooktest");
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        Log.i(TAG, "onCreate: " + stringFromJNI());
 
         initView();
         showView();
@@ -87,6 +81,4 @@ public class MainActivity extends AppCompatActivity {
         getIp = findViewById(R.id.get_ip);
 
     }
-
-    public static native String stringFromJNI();
 }

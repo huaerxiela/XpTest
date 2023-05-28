@@ -16,7 +16,7 @@ android {
         multiDexEnabled true
         externalNativeBuild {
             cmake {
-                cppFlags "-std=c++14"
+                cppFlags "-std=c++17"
             }
         }
         ndk {
