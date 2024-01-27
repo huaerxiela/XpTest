@@ -1,7 +1,6 @@
 package com.example.xptest;
 
 import android.annotation.SuppressLint;
-import android.app.AndroidAppHelper;
 import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
@@ -12,10 +11,11 @@ import android.widget.Toast;
 
 import java.lang.reflect.Method;
 
-import de.robv.android.xposed.IXposedHookLoadPackage;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import de.hexl.android.hposed.IHposedHookLoadPackage;
+import de.hexl.android.hposed.callbacks.XC_LoadPackage;
 
-public class HookMain implements IXposedHookLoadPackage {
+
+public class HookMain implements IHposedHookLoadPackage {
     private static final String TAG = "XpTest";
 
     @Override
@@ -23,7 +23,7 @@ public class HookMain implements IXposedHookLoadPackage {
         Log.i(TAG, "packageName:" + lpparam.packageName);
         // 主进程xx
         if (lpparam.processName.equals(lpparam.packageName)){
-            showToast(lpparam.packageName + " coming");
+            showToast(lpparam.packageName + " coming from hposed");
         }
 
     }

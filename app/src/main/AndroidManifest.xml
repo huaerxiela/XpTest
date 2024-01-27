@@ -24,7 +24,7 @@
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="Xp hook" />
+            android:value="Hp hook" />
         <meta-data
             android:name="xposedminversion"
             android:value="18" />
